@@ -1,4 +1,4 @@
-name: Deploy to AWS Fargate
+name: Deploy to Docker Hub and AWS Fargate
 
 on:
   push:
@@ -12,20 +12,39 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for tags
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
 
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v1
+        with:
+          region: ${{ secrets.AWS_REGION }}
 
-      - name: Build and push Docker image
+      - name: Get current tag
+        id: get_tag
         run: |
-          IMAGE_NAME=TEST-ACTIONS  
-          TAG=$(echo $GITHUB_SHA | cut -c1-7)
+          TAG=$(git describe --tags --abbrev=0 || echo "v0.0.0")
+          echo "Current tag is $TAG"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Create new tag
+        id: create_tag
+        run: |
+          NEW_TAG="v$(date +'%Y%m%d%H%M%S')"
+          echo "Creating new tag $NEW_TAG"
+          git tag $NEW_TAG
+          git push origin $NEW_TAG
+          echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME=test-actions  
+          TAG=${{ env.NEW_TAG }}          
           docker build -t $IMAGE_NAME:$TAG .
-        #  docker tag $IMAGE_NAME:$TAG YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
-        #  docker push YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
+          docker push $IMAGE_NAME:$TAG
 
       # - name: Terraform Setup
       #   run: |
@@ -33,4 +52,4 @@ jobs:
       #     terraform init
       #     terraform apply -auto-approve
       #   env:
-      #     TF_VAR_image = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/YOUR_ECR_REPO_NAME:$TAG"  # Pass the image URI
+      #     TF_VAR_image = "YOUR_ECR_REPO_NAME:${{ env.NEW_TAG }}"
