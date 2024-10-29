@@ -21,16 +21,16 @@ jobs:
 
       - name: Build and push Docker image
         run: |
-          IMAGE_NAME=YOUR_ECR_REPO_NAME  # Replace with your ECR repository name
+          IMAGE_NAME=TEST-ACTIONS  
           TAG=$(echo $GITHUB_SHA | cut -c1-7)
           docker build -t $IMAGE_NAME:$TAG .
-          docker tag $IMAGE_NAME:$TAG YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
-          docker push YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
+        #  docker tag $IMAGE_NAME:$TAG YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
+        #  docker push YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/$IMAGE_NAME:$TAG
 
-      - name: Terraform Setup
-        run: |
-          cd terraform
-          terraform init
-          terraform apply -auto-approve
-        env:
-          TF_VAR_image = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/YOUR_ECR_REPO_NAME:$TAG"  # Pass the image URI
+      # - name: Terraform Setup
+      #   run: |
+      #     cd terraform
+      #     terraform init
+      #     terraform apply -auto-approve
+      #   env:
+      #     TF_VAR_image = "YOUR_AWS_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/YOUR_ECR_REPO_NAME:$TAG"  # Pass the image URI
